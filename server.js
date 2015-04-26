@@ -2,8 +2,25 @@ var express = require("express"),
     http = require("http"),
     // import the mongoose library
     mongoose = require("mongoose"),
-    app = express();
+    app = express(),
+    server = http.createServer(app),
+    io = require('socket.io')(server);
 
+io.on('connection', function (socket) {
+	console.log("New connection");
+
+	socket.on('addToDo', function (toDo) {
+		console.log('emit:');
+		console.log(toDo);
+
+		socket.broadcast.emit('newToDo', toDo);
+		//io.sockets.emit('newToDo', toDo);
+	});
+
+	socket.on('disconnect', function(){
+    console.log('user disconnected');
+  });
+})
 app.use(express.static(__dirname + "/client"));
 app.use(express.bodyParser());
 
@@ -18,7 +35,7 @@ var ToDoSchema = mongoose.Schema({
 
 var ToDo = mongoose.model("ToDo", ToDoSchema);
 
-http.createServer(app).listen(3000);
+server.listen(3000);
 
 app.get("/todos.json", function (req, res) {
     ToDo.find({}, function (err, toDos) {
